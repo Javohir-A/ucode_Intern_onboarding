@@ -2041,7 +2041,7 @@ CREATE TABLE users_bad (
     name VARCHAR(50),
     phone_numbers VARCHAR(200)  -- "555-1234, 555-5678, 555-9999"
 );
-
+ч
 -- ✅ 1NF (atomic values)
 CREATE TABLE users (
     id INT PRIMARY KEY,
@@ -2122,6 +2122,615 @@ CREATE TABLE zip_codes (
 - Performance is critical
 - Joins are too expensive
 - Accept some data redundancy for speed
+
+---
+
+### Entity Relationship Diagrams (ERD)
+
+**Q: What is an ERD?**
+- Visual representation of database structure
+- Shows entities (tables) and relationships
+- Helps design database schema before implementation
+- Communication tool between developers and stakeholders
+
+#### Relationship Types
+
+**1. One-to-One (1:1)**
+```
+User ←──────→ UserProfile
+One user has exactly one profile
+One profile belongs to exactly one user
+
+Example:
+users table: id, email, password
+user_profiles table: user_id (FK, UNIQUE), bio, avatar, phone
+```
+
+**ERD Notation:**
+```
+┌──────────┐         ┌──────────────┐
+│  User    │ 1 ─── 1 │ UserProfile  │
+├──────────┤         ├──────────────┤
+│ id (PK)  │         │ user_id (FK) │
+│ email    │         │ bio          │
+│ password │         │ avatar       │
+└──────────┘         └──────────────┘
+```
+
+**SQL Implementation:**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE,
+    password_hash VARCHAR(255)
+);
+
+CREATE TABLE user_profiles (
+    user_id INT PRIMARY KEY,  -- Also acts as FK
+    bio TEXT,
+    avatar VARCHAR(255),
+    phone VARCHAR(20),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+**2. One-to-Many (1:N)** ⭐ Most Common
+```
+User ←──────< Post
+One user has many posts
+One post belongs to one user
+
+Example:
+users table: id, name
+posts table: id, user_id (FK), title, content
+```
+
+**ERD Notation:**
+```
+┌──────────┐         ┌──────────────┐
+│  User    │ 1 ─── * │    Post      │
+├──────────┤         ├──────────────┤
+│ id (PK)  │         │ id (PK)      │
+│ name     │         │ user_id (FK) │
+│ email    │         │ title        │
+└──────────┘         │ content      │
+                     └──────────────┘
+```
+
+**SQL Implementation:**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(200),
+    content TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+**3. Many-to-Many (N:M)**
+```
+Student <──────> Course
+One student enrolls in many courses
+One course has many students
+
+Requires junction/bridge table!
+
+Example:
+students table: id, name
+courses table: id, name
+enrollments table: student_id (FK), course_id (FK), grade
+```
+
+**ERD Notation:**
+```
+┌───────────┐         ┌──────────────┐         ┌───────────┐
+│  Student  │ * ─── * │ Enrollments  │ * ─── * │  Course   │
+├───────────┤         ├──────────────┤         ├───────────┤
+│ id (PK)   │         │ student_id   │         │ id (PK)   │
+│ name      │         │ course_id    │         │ name      │
+│ email     │         │ grade        │         │ credits   │
+└───────────┘         │ enrolled_at  │         └───────────┘
+                      └──────────────┘
+                      (Composite PK: student_id + course_id)
+```
+
+**SQL Implementation:**
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    credits INT
+);
+
+CREATE TABLE enrollments (
+    student_id INT,
+    course_id INT,
+    grade VARCHAR(2),
+    enrolled_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+```
+
+---
+
+### ERD Interview Scenarios
+
+#### Scenario 1: E-Commerce System
+
+**Question:** Draw an ERD for an e-commerce system with Users, Products, Orders, and Reviews.
+
+**Answer:**
+```
+┌──────────┐
+│  Users   │
+├──────────┤
+│ id (PK)  │
+│ email    │
+│ name     │
+└────┬─────┘
+     │ 1
+     │
+     │ *
+┌────┴──────────┐         ┌──────────────┐
+│    Orders     │ 1 ─── * │ Order_Items  │ * ─── 1
+├───────────────┤         ├──────────────┤         ┌──────────┐
+│ id (PK)       │         │ id (PK)      │         │ Products │
+│ user_id (FK)  │         │ order_id(FK) │←────────├──────────┤
+│ total         │         │ product_id   │         │ id (PK)  │
+│ status        │         │ quantity     │         │ name     │
+│ created_at    │         │ price        │         │ price    │
+└───────────────┘         └──────────────┘         │ stock    │
+     │ 1                                           └────┬─────┘
+     │                                                  │ 1
+     │ *                                                │
+┌────┴─────────┐                                       │ *
+│   Reviews    │                                  ┌────┴──────┐
+├──────────────┤                                  │  Reviews  │
+│ id (PK)      │←─────────────────────────────────├───────────┤
+│ user_id (FK) │                                  │ product_id│
+│ order_id(FK) │                                  │ rating    │
+│ product_id   │                                  │ comment   │
+│ rating       │                                  └───────────┘
+│ comment      │
+└──────────────┘
+```
+
+**Relationships:**
+- Users → Orders (1:N) - One user has many orders
+- Orders → Order_Items (1:N) - One order has many items
+- Products → Order_Items (1:N) - One product in many orders
+- Users → Reviews (1:N) - One user writes many reviews
+- Products → Reviews (1:N) - One product has many reviews
+
+**SQL Schema:**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT DEFAULT 0,
+    description TEXT
+);
+
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    total DECIMAL(10,2),
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    order_id INT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    UNIQUE (user_id, product_id, order_id)
+);
+```
+
+---
+
+#### Scenario 2: Social Media Platform
+
+**Question:** Design database schema for a social media platform with Users, Posts, Comments, Likes, and Followers.
+
+**Answer:**
+```
+                    ┌──────────┐
+                    │  Users   │
+                    ├──────────┤
+                    │ id (PK)  │
+                    │ username │
+                    │ email    │
+                    └────┬─────┘
+                         │
+        ┌────────────────┼────────────────┐
+        │ 1              │ 1              │ 1
+        │                │                │
+        │ *              │ *              │ *
+   ┌────┴─────┐     ┌───┴────┐      ┌───┴───────┐
+   │  Posts   │     │Followers│      │  Likes    │
+   ├──────────┤     ├────────┤      ├───────────┤
+   │ id (PK)  │     │follower│      │ user_id   │
+   │ user_id  │     │followee│      │ post_id   │
+   │ content  │     └────────┘      │ created_at│
+   │image_url │    (Self-reference) └───────────┘
+   └────┬─────┘                     (Composite PK)
+        │ 1
+        │
+        │ *
+   ┌────┴─────────┐
+   │  Comments    │
+   ├──────────────┤
+   │ id (PK)      │
+   │ post_id (FK) │
+   │ user_id (FK) │
+   │ content      │
+   │ parent_id    │ (Self-reference for replies)
+   └──────────────┘
+```
+
+**Key Relationships:**
+1. **Users → Posts** (1:N) - One user creates many posts
+2. **Users → Followers** (M:N) - Self-referencing many-to-many
+3. **Posts → Comments** (1:N) - One post has many comments
+4. **Users → Comments** (1:N) - One user writes many comments
+5. **Users + Posts → Likes** (M:N) - Users like posts
+
+**SQL Implementation:**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    bio TEXT,
+    avatar_url VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    image_url VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- M:N relationship with composite PK
+CREATE TABLE followers (
+    follower_id INT NOT NULL,
+    followee_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (follower_id, followee_id),
+    FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE CASCADE,
+    CHECK (follower_id != followee_id)  -- Can't follow yourself
+);
+
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    parent_id INT,  -- For nested comments/replies
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
+-- M:N relationship with composite PK
+CREATE TABLE likes (
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, post_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
+```
+
+---
+
+#### Scenario 3: Hospital Management System
+
+**Question:** Design ERD for a hospital with Doctors, Patients, Appointments, Prescriptions, and Departments.
+
+**Answer:**
+```
+┌─────────────┐
+│ Departments │
+├─────────────┤
+│ id (PK)     │
+│ name        │
+│ location    │
+└──────┬──────┘
+       │ 1
+       │
+       │ *
+┌──────┴──────┐              ┌────────────────┐
+│   Doctors   │              │   Patients     │
+├─────────────┤              ├────────────────┤
+│ id (PK)     │              │ id (PK)        │
+│ dept_id(FK) │              │ name           │
+│ name        │              │ date_of_birth  │
+│ specialty   │              │ phone          │
+└──────┬──────┘              └────────┬───────┘
+       │ 1                            │ 1
+       │                              │
+       │        ┌─────────────┐       │
+       └──────* │Appointments │ *─────┘
+                ├─────────────┤
+                │ id (PK)     │
+                │ doctor_id   │
+                │ patient_id  │
+                │ date_time   │
+                │ status      │
+                │ diagnosis   │
+                └──────┬──────┘
+                       │ 1
+                       │
+                       │ *
+                ┌──────┴────────┐
+                │ Prescriptions │
+                ├───────────────┤
+                │ id (PK)       │
+                │ appointment_id│
+                │ medicine_name │
+                │ dosage        │
+                │ duration      │
+                └───────────────┘
+```
+
+**SQL Schema:**
+```sql
+CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(100),
+    phone VARCHAR(20)
+);
+
+CREATE TABLE doctors (
+    id SERIAL PRIMARY KEY,
+    department_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(100),
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    FOREIGN KEY (department_id) REFERENCES departments(id)
+);
+
+CREATE TABLE patients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
+    blood_group VARCHAR(5)
+);
+
+CREATE TABLE appointments (
+    id SERIAL PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    patient_id INT NOT NULL,
+    appointment_date TIMESTAMP NOT NULL,
+    status VARCHAR(20) DEFAULT 'scheduled',
+    diagnosis TEXT,
+    notes TEXT,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id),
+    FOREIGN KEY (patient_id) REFERENCES patients(id)
+);
+
+CREATE TABLE prescriptions (
+    id SERIAL PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    medicine_name VARCHAR(100) NOT NULL,
+    dosage VARCHAR(50),
+    duration VARCHAR(50),
+    instructions TEXT,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
+);
+```
+
+---
+
+### Common ERD Interview Questions
+
+**Q1: What's the difference between identifying and non-identifying relationships?**
+
+**Identifying Relationship:**
+- Child entity depends on parent for identification
+- Parent's PK becomes part of child's PK
+```sql
+-- Order_Items can't exist without Order
+CREATE TABLE order_items (
+    order_id INT,
+    item_number INT,
+    product_id INT,
+    PRIMARY KEY (order_id, item_number),  -- order_id is part of PK
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+```
+
+**Non-Identifying Relationship:**
+- Child entity has its own independent PK
+- Parent's PK is just a regular FK
+```sql
+-- Post can exist independently
+CREATE TABLE posts (
+    id INT PRIMARY KEY,      -- Independent PK
+    user_id INT,             -- Regular FK
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+**Q2: How do you handle recursive/self-referencing relationships?**
+
+**Example: Employee-Manager relationship**
+```sql
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    manager_id INT,  -- References same table
+    FOREIGN KEY (manager_id) REFERENCES employees(id)
+);
+
+-- Query to get employee and their manager
+SELECT 
+    e.name AS employee,
+    m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+```
+
+**Q3: When should you use a composite key?**
+
+Use composite keys for:
+- Junction tables in M:N relationships
+- When natural combination uniquely identifies record
+- Prevents duplicate entries
+
+```sql
+-- M:N relationship
+CREATE TABLE student_courses (
+    student_id INT,
+    course_id INT,
+    enrollment_date DATE,
+    grade VARCHAR(2),
+    PRIMARY KEY (student_id, course_id),  -- Composite key
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+);
+```
+
+**Q4: Draw ERD for: "A book can have multiple authors, and an author can write multiple books"**
+
+**Answer:**
+```
+┌──────────┐         ┌──────────────┐         ┌──────────┐
+│ Authors  │ * ─── * │ Book_Authors │ * ─── * │  Books   │
+├──────────┤         ├──────────────┤         ├──────────┤
+│ id (PK)  │         │ author_id    │         │ id (PK)  │
+│ name     │         │ book_id      │         │ title    │
+│ bio      │         │ author_order │         │ isbn     │
+└──────────┘         └──────────────┘         │ published│
+                     (Composite PK)           └──────────┘
+```
+
+```sql
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    bio TEXT
+);
+
+CREATE TABLE books (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    isbn VARCHAR(20) UNIQUE,
+    published_date DATE
+);
+
+CREATE TABLE book_authors (
+    author_id INT,
+    book_id INT,
+    author_order INT,  -- First author, second author, etc.
+    PRIMARY KEY (author_id, book_id),
+    FOREIGN KEY (author_id) REFERENCES authors(id),
+    FOREIGN KEY (book_id) REFERENCES books(id)
+);
+```
+
+---
+
+### ERD Best Practices
+
+**DO:**
+✅ Use clear, descriptive entity names (plural)
+✅ Always define primary keys
+✅ Use foreign keys to enforce referential integrity
+✅ Add indexes on foreign key columns
+✅ Use junction tables for M:N relationships
+✅ Consider ON DELETE CASCADE/SET NULL appropriately
+✅ Document complex relationships
+
+**DON'T:**
+❌ Store redundant data (normalize first)
+❌ Use reserved keywords as names
+❌ Forget to define relationships
+❌ Create circular dependencies
+❌ Over-normalize (balance with performance)
+❌ Mix different naming conventions
+
+---
+
+### ERD Practice Exercise for Candidates
+
+**Exercise:** Draw an ERD for a Library Management System with the following requirements:
+
+1. Library has multiple branches
+2. Each branch has books (multiple copies of same title)
+3. Members can borrow books from any branch
+4. Track borrowing history (who borrowed what, when)
+5. Books have categories
+6. Members can reserve books that are currently borrowed
+7. Staff members manage branches
+
+**Expected Answer Structure:**
+- Entities: Branches, Books, BookCopies, Members, Categories, Loans, Reservations, Staff
+- Relationships: 1:N, M:N with junction tables
+- Proper keys and foreign keys
+- Handling of book copies vs book titles
+
+This tests:
+- Understanding of 1:1, 1:N, M:N relationships
+- Proper use of junction tables
+- Entity vs instance distinction (Book vs BookCopy)
+- Normalization knowledge
 
 ---
 
