@@ -53,17 +53,64 @@
 
 ### Step 2: Add Group Product to Container
 
-**Table: `batch_tu_contents`**
-- Create new record
-- Set `batch_transport_units_id` = K1111 GUID
-- Set `group_products_id` = "Compensated" GUID
-- Set `products_id` = NULL (it's a group product, not individual)
-- Set `weight` = 28,000 kg
-- Set `price` = 109,200 USD
-- Set `original_batch_transport_units_id` = NULL (not moved yet)
-- Set `moved_at` = NULL
+**Process:**
+1. User selects group product "Compensated" and provides price per kg (e.g., 3.90 USD/kg)
+2. System looks up `product_group_items` for "Compensated" to get individual products and their weights
+3. System expands group product into individual products immediately
+4. All products in group use the same unit price (from user input)
 
-**Result:** Container K1111 contains group product "Compensated"
+**From `product_group_items` for "Compensated":**
+- 46 STRIPLOIN: 16,800 kg (60% of 28,000)
+- 67 CUBE ROLL: 5,600 kg (20% of 28,000)
+- 41 TOPSIDE: 2,800 kg (10% of 28,000)
+- 65 BLADE: 2,800 kg (10% of 28,000)
+
+**Table: `batch_tu_contents`**
+- **Create 4 individual product records** (one per product in group):
+
+  1. **46 STRIPLOIN:**
+     - Set `batch_transport_units_id` = K1111 GUID
+     - Set `products_id` = 46 STRIPLOIN GUID
+     - Set `group_products_id` = NULL (expanded, stored as individual)
+     - Set `weight` = 16,800 kg
+     - Set `unit_price` = 3.90 USD/kg (from user input)
+     - Set `price` = 65,520 USD (16,800 × 3.90)
+     - Set `original_batch_transport_units_id` = NULL (not moved yet)
+     - Set `moved_at` = NULL
+
+  2. **67 CUBE ROLL:**
+     - Set `batch_transport_units_id` = K1111 GUID
+     - Set `products_id` = 67 CUBE ROLL GUID
+     - Set `group_products_id` = NULL
+     - Set `weight` = 5,600 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 21,840 USD (5,600 × 3.90)
+     - Set `original_batch_transport_units_id` = NULL
+     - Set `moved_at` = NULL
+
+  3. **41 TOPSIDE:**
+     - Set `batch_transport_units_id` = K1111 GUID
+     - Set `products_id` = 41 TOPSIDE GUID
+     - Set `group_products_id` = NULL
+     - Set `weight` = 2,800 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 10,920 USD (2,800 × 3.90)
+     - Set `original_batch_transport_units_id` = NULL
+     - Set `moved_at` = NULL
+
+  4. **65 BLADE:**
+     - Set `batch_transport_units_id` = K1111 GUID
+     - Set `products_id` = 65 BLADE GUID
+     - Set `group_products_id` = NULL
+     - Set `weight` = 2,800 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 10,920 USD (2,800 × 3.90)
+     - Set `original_batch_transport_units_id` = NULL
+     - Set `moved_at` = NULL
+
+**Total:** 28,000 kg, 109,200 USD (all products use same unit price: 3.90 USD/kg)
+
+**Result:** Container K1111 contains 4 individual products (expanded from "Compensated" group)
 
 ---
 
@@ -121,16 +168,19 @@
 
 ---
 
-### Step 6: Expand Group Product and Move 50% to Truck
+### Step 6: Move 50% of Products to Truck
 
-**Expand Group Product:**
-- Look up `product_group_items` for "Compensated"
-- Calculate 50% of each product:
-  - 46 STRIPLOIN: 8,400 kg (50% of 16,800)
-  - 67 CUBE ROLL: 2,800 kg (50% of 5,600)
-  - 41 TOPSIDE: 1,400 kg (50% of 2,800)
-  - 65 BLADE: 1,400 kg (50% of 2,800)
-- Total: 14,000 kg (50% of 28,000)
+**Process:**
+- Container K1111 already has 4 individual products (from Step 2)
+- User moves 50% of each product's weight to truck
+- Calculate 50% of each product in container:
+
+**Current products in Container K1111:**
+- 46 STRIPLOIN: 16,800 kg → Move 8,400 kg (50%)
+- 67 CUBE ROLL: 5,600 kg → Move 2,800 kg (50%)
+- 41 TOPSIDE: 2,800 kg → Move 1,400 kg (50%)
+- 65 BLADE: 2,800 kg → Move 1,400 kg (50%)
+- **Total to move: 14,000 kg (50% of 28,000)**
 
 **Table: `batch_transport_units`**
 - **Create new record** for Truck T-123
@@ -146,25 +196,69 @@
   - Set `total_price` = 54,600 USD (remaining 50%)
 
 **Table: `batch_tu_contents`**
-- **Update Container K1111 record** (group product)
-  - Set `weight` = 14,000 kg (remaining)
-  - Set `price` = 54,600 USD (remaining)
+- **Update 4 existing records** in Container K1111 (reduce by 50%):
+  1. **46 STRIPLOIN:**
+     - Update weight: 16,800 kg → 8,400 kg (remaining 50%)
+     - Update price: 65,520 USD → 32,760 USD (remaining 50%)
+     - Keep `unit_price` = 3.90 USD/kg (unchanged)
 
-- **Create 4 new records** in Truck T-123 (expanded products):
-  1. 46 STRIPLOIN
+  2. **67 CUBE ROLL:**
+     - Update weight: 5,600 kg → 2,800 kg
+     - Update price: 21,840 USD → 10,920 USD
+
+  3. **41 TOPSIDE:**
+     - Update weight: 2,800 kg → 1,400 kg
+     - Update price: 10,920 USD → 5,460 USD
+
+  4. **65 BLADE:**
+     - Update weight: 2,800 kg → 1,400 kg
+     - Update price: 10,920 USD → 5,460 USD
+
+- **Create 4 new records** in Truck T-123 (moved products):
+  1. **46 STRIPLOIN:**
      - Set `batch_transport_units_id` = T-123 GUID
      - Set `products_id` = 46 STRIPLOIN GUID
-     - Set `group_products_id` = NULL (expanded, no longer group)
-     - Set `weight` = 8,400 kg
-     - Set `price` = 32,760 USD
+     - Set `group_products_id` = NULL
+     - Set `weight` = 8,400 kg (moved amount)
+     - Set `unit_price` = 3.90 USD/kg (same as original)
+     - Set `price` = 32,760 USD (8,400 × 3.90)
      - Set `original_batch_transport_units_id` = K1111 GUID (original container)
      - Set `moved_at` = NOW()
      - Set `original_weight` = 8,400 kg
      - Set `original_price` = 32,760 USD
 
-  2. 67 CUBE ROLL (same pattern)
-  3. 41 TOPSIDE (same pattern)
-  4. 65 BLADE (same pattern)
+  2. **67 CUBE ROLL:**
+     - Set `batch_transport_units_id` = T-123 GUID
+     - Set `products_id` = 67 CUBE ROLL GUID
+     - Set `weight` = 2,800 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 10,920 USD
+     - Set `original_batch_transport_units_id` = K1111 GUID
+     - Set `moved_at` = NOW()
+     - Set `original_weight` = 2,800 kg
+     - Set `original_price` = 10,920 USD
+
+  3. **41 TOPSIDE:**
+     - Set `batch_transport_units_id` = T-123 GUID
+     - Set `products_id` = 41 TOPSIDE GUID
+     - Set `weight` = 1,400 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 5,460 USD
+     - Set `original_batch_transport_units_id` = K1111 GUID
+     - Set `moved_at` = NOW()
+     - Set `original_weight` = 1,400 kg
+     - Set `original_price` = 5,460 USD
+
+  4. **65 BLADE:**
+     - Set `batch_transport_units_id` = T-123 GUID
+     - Set `products_id` = 65 BLADE GUID
+     - Set `weight` = 1,400 kg
+     - Set `unit_price` = 3.90 USD/kg
+     - Set `price` = 5,460 USD
+     - Set `original_batch_transport_units_id` = K1111 GUID
+     - Set `moved_at` = NOW()
+     - Set `original_weight` = 1,400 kg
+     - Set `original_price` = 5,460 USD
 
 **Table: `batch_tu_content_movements`**
 - Create 4 movement records (one per product)
@@ -242,8 +336,9 @@
 ## Scenario 5: Multiple Containers → One Truck
 
 ### Setup
-- Container K2222: "4HQ" group product, 28,000 kg, 117,600 USD, P1 complete
-- Container K3333: "44 SILVER SIDE" product, 28,000 kg, 109,200 USD, P2 complete
+- Container K2222: Contains individual products (expanded from "4HQ" group), 28,000 kg, 117,600 USD, P1 complete
+  - Products: 45 RUMP STEAK, 41 TOPSIDE, 44 SILVER SIDE, 42 KNUCKLE (from product_group_items)
+- Container K3333: Contains "44 SILVER SIDE" product, 28,000 kg, 109,200 USD, P2 complete
 
 ### Step 9: Move Products from Multiple Containers to One Truck
 
@@ -266,28 +361,42 @@
   - Set `total_price` = 27,300 USD (remaining 25%)
 
 **Table: `batch_tu_contents`**
-- **Update Container K2222 record** (group product)
-  - Set `weight` = 14,000 kg
-  - Set `price` = 58,800 USD
+- **Update existing records** in Container K2222 (reduce each product by 50%):
+  - For each product in K2222, update:
+    - `weight` = 50% of original
+    - `price` = 50% of original
+    - Keep `unit_price` unchanged
 
-- **Update Container K3333 record** (product)
-  - Set `weight` = 7,000 kg
-  - Set `price` = 27,300 USD
+- **Update existing record** in Container K3333 (reduce by 75%):
+  - 44 SILVER SIDE:
+    - Update `weight`: 28,000 kg → 7,000 kg (remaining 25%)
+    - Update `price`: 109,200 USD → 27,300 USD (remaining 25%)
+    - Keep `unit_price` unchanged
 
-- **Create multiple new records** in Truck T-999:
-  - Expand K2222's "4HQ" group into individual products (4 products)
-  - Each product has:
-    - `batch_transport_units_id` = T-999 GUID
-    - `products_id` = Individual product GUID
-    - `group_products_id` = NULL (expanded)
-    - `original_batch_transport_units_id` = K2222 GUID
-    - `moved_at` = NOW()
+- **Create new records** in Truck T-999:
+  - **From K2222 (50% of each product):**
+    - For each product in K2222, create new record:
+      - Set `batch_transport_units_id` = T-999 GUID
+      - Set `products_id` = Product GUID
+      - Set `weight` = 50% of original weight
+      - Set `unit_price` = Same as original
+      - Set `price` = weight × unit_price
+      - Set `original_batch_transport_units_id` = K2222 GUID
+      - Set `moved_at` = NOW()
+      - Set `original_weight` = Moved weight
+      - Set `original_price` = Moved price
   
-  - Add K3333's product:
-    - `batch_transport_units_id` = T-999 GUID
-    - `products_id` = 44 SILVER SIDE GUID
-    - `original_batch_transport_units_id` = K3333 GUID
-    - `moved_at` = NOW()
+  - **From K3333 (75% of product):**
+    - 44 SILVER SIDE:
+      - Set `batch_transport_units_id` = T-999 GUID
+      - Set `products_id` = 44 SILVER SIDE GUID
+      - Set `weight` = 21,000 kg (75% of 28,000)
+      - Set `unit_price` = Same as original
+      - Set `price` = 81,900 USD (75% of 109,200)
+      - Set `original_batch_transport_units_id` = K3333 GUID
+      - Set `moved_at` = NOW()
+      - Set `original_weight` = 21,000 kg
+      - Set `original_price` = 81,900 USD
 
 **Table: `batch_tu_content_movements`**
 - Create movement records for each product moved
@@ -353,18 +462,21 @@
 
 ### When Container is Created:
 1. `batch_transport_units` - Create container record
-2. `batch_tu_contents` - Create group product or product record
+2. `batch_tu_contents` - Create individual product records
+   - If group product selected: Look up `product_group_items`, expand into individual products
+   - All products use same `unit_price` (from user input)
+   - Each product gets its own record in `batch_tu_contents`
 
 ### When Container Completes a Stage:
-1. `batch_transport_units` - Update status fields
+1. `batch_transport_units` - Update status fields (`proforma_statuses_id`, `proforma_sub_statuses_id`)
 2. `procument_debts` - Create debt record with container reference
 
 ### When Products are Moved (Partial):
-1. `batch_transport_unit_status_locks` - Lock container status
-2. `batch_transport_units` - Create truck, update container weight/price
-3. `batch_tu_contents` - Update container, create expanded products in truck
-4. `batch_tu_content_movements` - Record movement history
-5. `procument_debts` - Update existing debts, create locked debts for truck portion
+1. `batch_transport_unit_status_locks` - Lock container status (record completed stages and locked debt)
+2. `batch_transport_units` - Create truck record, update container weight/price totals
+3. `batch_tu_contents` - Update container products (reduce weight/price), create new records in truck
+4. `batch_tu_content_movements` - Record movement history for each product
+5. `procument_debts` - Update existing debts (adjust `container_portion_value`), create locked debts for truck portion
 
 ### When Transport Unit Completes a Stage:
 1. `batch_transport_units` - Update status fields
@@ -376,9 +488,13 @@
 
 ## Key Points
 
-1. **Original Container Reference**: Every product in a truck has `original_batch_transport_units_id` pointing back to source container
-2. **Group Product Expansion**: When moved to truck, group products become individual products in `batch_tu_contents`
-3. **Partial Movements**: Container and truck portions are tracked separately via weight/price in `batch_tu_contents`
+1. **Group Product Expansion**: Group products are expanded into individual products **immediately when added to container** (not when moved to truck). All products in group use same `unit_price` from user input.
+
+2. **Original Container Reference**: Every product in a truck has `original_batch_transport_units_id` pointing back to source container
+
+3. **Partial Movements**: Container and truck portions are tracked separately via weight/price in `batch_tu_contents`. Each product record is updated (container) or created (truck).
+
 4. **Debt Calculation**: Each debt record links to specific transport unit and original container via `batch_transport_units_id` and `original_batch_transport_units_id`
+
 5. **Status Independence**: Container and truck can progress through stages independently, each creating their own debt records
 
