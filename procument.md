@@ -138,43 +138,52 @@
 
 ---
 
-## Product Movement: Container → Truck
+## Product Movement: Container → Truck (Partial Movement)
 
-### Scenario: Container K1111 arrives, products moved to trucks
+### Scenario: Container K1111 - Partial product movement to trucks
+
+**Important:** Products can be **partially moved** from a container. The remaining products stay in the container and can continue progressing through stages independently.
 
 #### Before Movement:
-- **Container K1111:** Stage P2 complete (all P2 sub-statuses done)
-- **Accrued Debt:** 43,680 USD (40% of 109,200 = P1: 20% + P2: 20%)
-- **Remaining Debt:** 65,520 USD (60% of 109,200 = P3: 20% + P4: 20% + P5: 20%)
-
-#### Movement Action:
-- Products from K1111 split into:
-  - **Truck T-123:** 14,000 kg (50% of container = 54,600 USD value)
-  - **Truck T-456:** 14,000 kg (50% of container = 54,600 USD value)
-
-#### After Movement (CORRECT Approach):
 - **Container K1111:** 
-  - Stage frozen at P2 (complete)
-  - Debt recorded: 43,680 USD (permanent record - P1: 21,840 + P2: 21,840)
-  - No further debt accrual
+  - Total: 28,000 kg
+  - Total Value: 109,200 USD
+  - Stage P2 complete (all P2 sub-statuses done)
+  - **Accrued Debt:** 43,680 USD (40% of 109,200 = P1: 20% + P2: 20%)
+  - **Remaining Debt:** 65,520 USD (60% of 109,200 = P3: 20% + P4: 20% + P5: 20%)
 
-- **Truck T-123:**
-  - Inherits: 50% of remaining stages = 32,760 USD (30% of 109,200 = P3: 10,920 + P4: 10,920 + P5: 10,920)
-  - New status chain starts: P3, P4, P5 stages
-  - When T-123 **stage P3 completes**: Debt = 10,920 USD (20% of 109,200)
-  - When T-123 **stage P4 completes**: Debt = 10,920 USD (20% of 109,200)
-  - When T-123 **stage P5 completes**: Debt = 10,920 USD (20% of 109,200)
-  - **Total for T-123 portion:** 32,760 USD (30% of container value)
+#### Movement Action (Partial):
+- **14,000 kg moved to Truck T-123** (50% of container = 54,600 USD value)
+- **14,000 kg remains in Container K1111** (50% of container = 54,600 USD value)
 
-- **Truck T-456:**
-  - Inherits: 50% of remaining stages = 32,760 USD (30% of 109,200)
-  - Same status progression as T-123
-  - **Total for T-456 portion:** 32,760 USD (30% of container value)
+#### After Movement (CORRECT Approach - Complex Debt Calculation):
 
-**Total Debt for K1111 (Container + Trucks):** 109,200 USD (100% of container value) ✓
-- Container: 43,680 USD (40%)
-- Truck T-123: 32,760 USD (30%)
-- Truck T-456: 32,760 USD (30%)
+**The container is split into two independent tracking units:**
+
+1. **Container K1111 (Remaining 50% = 14,000 kg, 54,600 USD value):**
+   - **Locked debt from completed stages:** 21,840 USD (40% of 54,600 = P1: 10,920 + P2: 10,920)
+   - **Can continue progressing** through remaining stages: P3, P4, P5
+   - When K1111 **stage P3 completes**: Debt = 10,920 USD (20% of 54,600)
+   - When K1111 **stage P4 completes**: Debt = 10,920 USD (20% of 54,600)
+   - When K1111 **stage P5 completes**: Debt = 10,920 USD (20% of 54,600)
+   - **Total for container portion:** 54,600 USD (100% of 54,600)
+
+2. **Truck T-123 (Moved 50% = 14,000 kg, 54,600 USD value):**
+   - **Locked debt from completed stages:** 21,840 USD (40% of 54,600 = P1: 10,920 + P2: 10,920)
+   - **New status chain starts:** P3, P4, P5 stages (truck stages)
+   - When T-123 **stage P3 completes**: Debt = 10,920 USD (20% of 54,600)
+   - When T-123 **stage P4 completes**: Debt = 10,920 USD (20% of 54,600)
+   - When T-123 **stage P5 completes**: Debt = 10,920 USD (20% of 54,600)
+   - **Total for truck portion:** 54,600 USD (100% of 54,600)
+
+**Total Debt for K1111 (Container portion + Truck portion):** 109,200 USD (100% of original container value) ✓
+- Container K1111 (remaining): 54,600 USD (50%)
+- Truck T-123 (moved): 54,600 USD (50%)
+
+**Key Complexity:**
+- Both the container and truck can progress through stages **independently**
+- Debt is calculated separately for each portion based on its own stage progression
+- The container portion and truck portion are tracked separately but both reference the original container K1111
 
 ---
 
@@ -191,14 +200,15 @@
   - Container K7777: 150,000 USD, Stage P2 complete (40% debt accrued)
   - Container K8888: 120,000 USD, Stage P1 complete (20% debt accrued)
 
-#### Movement Action:
+#### Movement Action (Partial from each container):
 - **Truck T-999** receives products from:
-  - K1111: 14,000 kg (50% of container = 54,600 USD value)
-  - K2222: 21,000 kg (75% of container = 81,900 USD value)
-  - K7777: 20,000 kg (40% of container = 60,000 USD value)
-  - K8888: 15,000 kg (50% of container = 60,000 USD value)
+  - K1111: 14,000 kg moved (50% of container = 54,600 USD value) - **14,000 kg remains in K1111**
+  - K2222: 21,000 kg moved (75% of container = 81,900 USD value) - **7,000 kg remains in K2222**
+  - K7777: 20,000 kg moved (40% of container = 60,000 USD value) - **30,000 kg remains in K7777**
+  - K8888: 15,000 kg moved (50% of container = 60,000 USD value) - **15,000 kg remains in K8888**
 
 **Total in Truck T-999:** 256,500 USD (from 4 different containers, 2 different proformas, 2 different invoices)
+**Remaining in containers:** Products still remain in each original container and can continue progressing independently
 
 #### After Movement (CORRECT Approach):
 
@@ -208,37 +218,68 @@
 - Product from K7777 → Truck T-999: References (P-211, I-002, K7777)
 - Product from K8888 → Truck T-999: References (P-211, I-002, K8888)
 
-**Debt Calculation Per Original Container:**
+**Debt Calculation Per Original Container (Split Tracking):**
 
-1. **Container K1111 (50% moved to T-999):**
-   - Container debt locked: 21,840 USD (P1: 10,920 + P2: 10,920) for 50% portion
-   - Remaining in T-999: 32,760 USD (P3: 10,920 + P4: 10,920 + P5: 10,920)
-   - When T-999 **stage P3 completes**: Debt = 10,920 USD (20% of 54,600)
-   - When T-999 **stage P4 completes**: Debt = 10,920 USD (20% of 54,600)
-   - When T-999 **stage P5 completes**: Debt = 10,920 USD (20% of 54,600)
+1. **Container K1111:**
+   - **Remaining in container (50% = 54,600 USD):**
+     - Locked debt: 21,840 USD (P1: 10,920 + P2: 10,920)
+     - Can continue: P3, P4, P5 stages
+     - When container **stage P3 completes**: Debt = 10,920 USD (20% of 54,600)
+     - When container **stage P4 completes**: Debt = 10,920 USD (20% of 54,600)
+     - When container **stage P5 completes**: Debt = 10,920 USD (20% of 54,600)
+   
+   - **Moved to T-999 (50% = 54,600 USD):**
+     - Locked debt: 21,840 USD (P1: 10,920 + P2: 10,920)
+     - Continues on truck: P3, P4, P5 stages
+     - When T-999 **stage P3 completes**: Debt = 10,920 USD (20% of 54,600)
+     - When T-999 **stage P4 completes**: Debt = 10,920 USD (20% of 54,600)
+     - When T-999 **stage P5 completes**: Debt = 10,920 USD (20% of 54,600)
+   
+   **Total for K1111:** 109,200 USD (container portion + truck portion)
 
-2. **Container K2222 (75% moved to T-999):**
-   - Container debt locked: 16,380 USD (P1: 16,380) for 75% portion
-   - Remaining in T-999: 65,520 USD (P2: 16,380 + P3: 16,380 + P4: 16,380 + P5: 16,380)
-   - When T-999 **stage P2 completes**: Debt = 16,380 USD (20% of 81,900)
-   - When T-999 **stage P3 completes**: Debt = 16,380 USD (20% of 81,900)
-   - When T-999 **stage P4 completes**: Debt = 16,380 USD (20% of 81,900)
-   - When T-999 **stage P5 completes**: Debt = 16,380 USD (20% of 81,900)
+2. **Container K2222:**
+   - **Remaining in container (25% = 27,300 USD):**
+     - Locked debt: 5,460 USD (P1: 5,460)
+     - Can continue: P2, P3, P4, P5 stages
+   
+   - **Moved to T-999 (75% = 81,900 USD):**
+     - Locked debt: 16,380 USD (P1: 16,380)
+     - Continues on truck: P2, P3, P4, P5 stages
+     - When T-999 **stage P2 completes**: Debt = 16,380 USD (20% of 81,900)
+     - When T-999 **stage P3 completes**: Debt = 16,380 USD (20% of 81,900)
+     - When T-999 **stage P4 completes**: Debt = 16,380 USD (20% of 81,900)
+     - When T-999 **stage P5 completes**: Debt = 16,380 USD (20% of 81,900)
+   
+   **Total for K2222:** 109,200 USD (container portion + truck portion)
 
-3. **Container K7777 (40% moved to T-999):**
-   - Container debt locked: 24,000 USD (P1: 12,000 + P2: 12,000) for 40% portion
-   - Remaining in T-999: 36,000 USD (P3: 12,000 + P4: 12,000 + P5: 12,000)
-   - When T-999 **stage P3 completes**: Debt = 12,000 USD (20% of 60,000)
-   - When T-999 **stage P4 completes**: Debt = 12,000 USD (20% of 60,000)
-   - When T-999 **stage P5 completes**: Debt = 12,000 USD (20% of 60,000)
+3. **Container K7777:**
+   - **Remaining in container (60% = 90,000 USD):**
+     - Locked debt: 36,000 USD (P1: 18,000 + P2: 18,000)
+     - Can continue: P3, P4, P5 stages
+   
+   - **Moved to T-999 (40% = 60,000 USD):**
+     - Locked debt: 24,000 USD (P1: 12,000 + P2: 12,000)
+     - Continues on truck: P3, P4, P5 stages
+     - When T-999 **stage P3 completes**: Debt = 12,000 USD (20% of 60,000)
+     - When T-999 **stage P4 completes**: Debt = 12,000 USD (20% of 60,000)
+     - When T-999 **stage P5 completes**: Debt = 12,000 USD (20% of 60,000)
+   
+   **Total for K7777:** 150,000 USD (container portion + truck portion)
 
-4. **Container K8888 (50% moved to T-999):**
-   - Container debt locked: 12,000 USD (P1: 12,000) for 50% portion
-   - Remaining in T-999: 48,000 USD (P2: 12,000 + P3: 12,000 + P4: 12,000 + P5: 12,000)
-   - When T-999 **stage P2 completes**: Debt = 12,000 USD (20% of 60,000)
-   - When T-999 **stage P3 completes**: Debt = 12,000 USD (20% of 60,000)
-   - When T-999 **stage P4 completes**: Debt = 12,000 USD (20% of 60,000)
-   - When T-999 **stage P5 completes**: Debt = 12,000 USD (20% of 60,000)
+4. **Container K8888:**
+   - **Remaining in container (50% = 60,000 USD):**
+     - Locked debt: 12,000 USD (P1: 12,000)
+     - Can continue: P2, P3, P4, P5 stages
+   
+   - **Moved to T-999 (50% = 60,000 USD):**
+     - Locked debt: 12,000 USD (P1: 12,000)
+     - Continues on truck: P2, P3, P4, P5 stages
+     - When T-999 **stage P2 completes**: Debt = 12,000 USD (20% of 60,000)
+     - When T-999 **stage P3 completes**: Debt = 12,000 USD (20% of 60,000)
+     - When T-999 **stage P4 completes**: Debt = 12,000 USD (20% of 60,000)
+     - When T-999 **stage P5 completes**: Debt = 12,000 USD (20% of 60,000)
+   
+   **Total for K8888:** 120,000 USD (container portion + truck portion)
 
 **When Truck T-999 completes stage P3:**
 - Total debt accrued = 10,920 (K1111) + 16,380 (K2222) + 12,000 (K7777) + 12,000 (K8888) = **51,300 USD**
@@ -268,19 +309,54 @@
 3. **Debt accrues when a STAGE (PS) completes**, not when sub-statuses change
    - Sub-statuses (PSS) are for tracking progress only
    - Debt = Stage Percentage × Container Value (when stage is complete)
-4. **When products move from container to truck:**
-   - Container's accrued debt is **locked** (cannot be changed)
-   - Remaining stages (and their percentages) are **split proportionally** to trucks
-   - Trucks continue with remaining stages (P3, P4, P5)
+4. **When products move from container to truck (PARTIAL MOVEMENT - Complex):**
+   - Products can be **partially moved** (e.g., 14,000 kg out of 28,000 kg)
+   - **Remaining products stay in the container** and can continue progressing independently
+   - **Both portions track debt separately:**
+     - **Container portion:** Continues with container's stage progression
+     - **Truck portion:** Continues with truck's stage progression
+   - **Debt calculation complexity:**
+     - Each portion has its own locked debt from completed stages (proportional to amount)
+     - Each portion can progress through remaining stages independently
+     - Debt is calculated separately when each portion completes a stage
+     - Example: If 50% moved to truck, container portion = 50% of original value, truck portion = 50% of original value
+     - Both portions reference the original container for tracking
+
 5. **Multiple containers can move products to the same truck:**
    - Products from different containers, invoices, and proformas can be in one truck
    - **Each product maintains its original references** (proforma, invoice, container)
-   - **Debt is calculated per original container**, not per truck
-   - When truck completes a stage, debt is calculated separately for each product based on:
+   - **Debt is calculated per original container portion**, not per truck
+   - When truck completes a stage, debt is calculated separately for each product portion based on:
      - Its original container's value (proportional to amount moved)
-     - Its original container's completed stages (locked debt)
-     - Remaining stages applicable to that product
+     - Its original container's completed stages (locked debt for that portion)
+     - Remaining stages applicable to that product portion
+   - **The container's remaining portion** can also progress independently and accrue debt separately
 6. **Status percentages are configured per proforma** (can vary, but total = 100%)
-7. **No double-counting:** Each stage percentage is only paid once per container
+7. **No double-counting:** Each stage percentage is only paid once per container (but split across portions)
 8. **Stage completion criteria:** All sub-statuses within a stage must be complete for the stage to be considered complete
+
+---
+
+## Implementation Challenge
+
+**The complexity of partial product movement makes debt calculation challenging:**
+
+1. **Tracking Requirements:**
+   - Need to track what percentage/amount of each container's products are in which transport unit
+   - Need to track stage progression separately for:
+     - Container's remaining portion
+     - Each truck that received products from that container
+   - Need to maintain references to original container/invoice/proforma for each product portion
+
+2. **Debt Calculation Requirements:**
+   - Calculate debt based on original container value (proportional to amount moved)
+   - Lock debt from completed stages (proportional to amount)
+   - Calculate debt separately when each portion (container or truck) completes a stage
+   - Ensure total debt for original container = 100% of container value (across all portions)
+
+3. **Data Model Considerations:**
+   - How to represent partial product movement in database?
+   - How to link truck products back to original container portions?
+   - How to track stage progression for split portions?
+   - How to prevent double-counting when calculating total debt?
 
