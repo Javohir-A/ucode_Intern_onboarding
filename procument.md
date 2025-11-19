@@ -39,39 +39,54 @@
 
 ## Status Hierarchy with Sub-Statuses
 
+**Important:** Sub-statuses track progress within a stage, but **debt is calculated when the entire stage (PS) is complete**, not per sub-status.
+
 ### P1: Продукция готова на заводе (20%)
 
-| PSS Code | Sub-Status Name | Percentage | Debt Trigger |
-|----------|----------------|------------|--------------|
-| P1-S1 | Отгружено с заводов | 20% | When marked complete |
+| PSS Code | Sub-Status Name | Purpose | Debt Trigger |
+|----------|----------------|---------|--------------|
+| P1-S1 | Отгружено с заводов | Track progress | None (tracking only) |
+| P1-S2 | Готово к отправке | Track progress | None (tracking only) |
+
+**Debt Calculation:** When **P1 stage is complete** → Debt = 20% of container value
 
 ### P2: В пути на воде (20%)
 
-| PSS Code | Sub-Status Name | Percentage | Debt Trigger |
-|----------|----------------|------------|--------------|
-| P2-S1 | В порту Индии | 10% | When marked complete |
-| P2-S2 | В пути (океан) | 10% | When marked complete |
+| PSS Code | Sub-Status Name | Purpose | Debt Trigger |
+|----------|----------------|---------|--------------|
+| P2-S1 | В порту Индии | Track progress | None (tracking only) |
+| P2-S2 | В пути (океан) | Track progress | None (tracking only) |
+| P2-S3 | Прибыло в порт назначения | Track progress | None (tracking only) |
+
+**Debt Calculation:** When **P2 stage is complete** → Debt = 20% of container value
 
 ### P3: В пути на суше (20%)
 
-| PSS Code | Sub-Status Name | Percentage | Debt Trigger |
-|----------|----------------|------------|--------------|
-| P3-S1 | Отгружено с порта | 10% | When marked complete |
-| P3-S2 | В пути (суша) | 10% | When marked complete |
+| PSS Code | Sub-Status Name | Purpose | Debt Trigger |
+|----------|----------------|---------|--------------|
+| P3-S1 | Отгружено с порта | Track progress | None (tracking only) |
+| P3-S2 | В пути (суша) | Track progress | None (tracking only) |
+
+**Debt Calculation:** When **P3 stage is complete** → Debt = 20% of container value
 
 ### P4: Пересёк границу с Узбекистаном (20%)
 
-| PSS Code | Sub-Status Name | Percentage | Debt Trigger |
-|----------|----------------|------------|--------------|
-| P4-S1 | Прибыло в порт Дубая | 10% | When marked complete |
-| P4-S2 | На таможне | 10% | When marked complete |
+| PSS Code | Sub-Status Name | Purpose | Debt Trigger |
+|----------|----------------|---------|--------------|
+| P4-S1 | Прибыло в порт Дубая | Track progress | None (tracking only) |
+| P4-S2 | На таможне | Track progress | None (tracking only) |
+| P4-S3 | Прошло таможню | Track progress | None (tracking only) |
+
+**Debt Calculation:** When **P4 stage is complete** → Debt = 20% of container value
 
 ### P5: Прибыл на склад получателя (20%)
 
-| PSS Code | Sub-Status Name | Percentage | Debt Trigger |
-|----------|----------------|------------|--------------|
-| P5-S1 | Прибыло на таможню | 10% | When marked complete |
-| P5-S2 | Принято на складе | 10% | When marked complete |
+| PSS Code | Sub-Status Name | Purpose | Debt Trigger |
+|----------|----------------|---------|--------------|
+| P5-S1 | Прибыло на таможню | Track progress | None (tracking only) |
+| P5-S2 | Принято на складе | Track progress | None (tracking only) |
+
+**Debt Calculation:** When **P5 stage is complete** → Debt = 20% of container value
 
 ---
 
@@ -86,14 +101,14 @@
 
 ### Container Breakdown
 
-| Container | Product | Volume (kg) | Price/kg | Container Value | Status Progress |
-|-----------|---------|-------------|----------|-----------------|----------------|
-| K1111 | Compensated | 28,000 | 3.90 | 109,200 | P1-S1 ✓, P2-S1 ✓ |
-| K2222 | Compensated | 28,000 | 3.90 | 109,200 | P1-S1 ✓, P2-S1 ✓ |
-| K3333 | Compensated | 28,000 | 3.90 | 109,200 | P1-S1 ✓ |
-| K4444 | 4HQ | 28,000 | 4.20 | 117,600 | P1-S1 ✓ |
-| K5555 | 4HQ | 28,000 | 4.20 | 117,600 | P1-S1 ✓ |
-| K6666 | 4HQ | 28,000 | 4.20 | 117,600 | P1-S1 ✓ |
+| Container | Product | Volume (kg) | Price/kg | Container Value | Current Stage | Sub-Status Progress |
+|-----------|---------|-------------|----------|-----------------|---------------|---------------------|
+| K1111 | Compensated | 28,000 | 3.90 | 109,200 | P2 (complete) | P1-S1 ✓, P1-S2 ✓, P2-S1 ✓, P2-S2 ✓ |
+| K2222 | Compensated | 28,000 | 3.90 | 109,200 | P2 (complete) | P1-S1 ✓, P1-S2 ✓, P2-S1 ✓, P2-S2 ✓ |
+| K3333 | Compensated | 28,000 | 3.90 | 109,200 | P1 (complete) | P1-S1 ✓, P1-S2 ✓ |
+| K4444 | 4HQ | 28,000 | 4.20 | 117,600 | P1 (complete) | P1-S1 ✓, P1-S2 ✓ |
+| K5555 | 4HQ | 28,000 | 4.20 | 117,600 | P1 (complete) | P1-S1 ✓, P1-S2 ✓ |
+| K6666 | 4HQ | 28,000 | 4.20 | 117,600 | P1 (complete) | P1-S1 ✓, P1-S2 ✓ |
 
 **Total Invoice Value:** 680,400 USD
 
@@ -104,20 +119,22 @@
 ### Container K1111 (Value: 109,200 USD)
 
 #### Current (INCORRECT) Behavior:
-- When K1111 reaches P1-S1: Debt = **680,400 USD** (entire invoice) ❌
-- When K2222 reaches P1-S1: Debt = **680,400 USD** (entire invoice again) ❌
+- When K1111 **stage P1 completes**: Debt = **680,400 USD** (entire invoice) ❌
+- When K1111 **stage P2 completes**: Debt = **680,400 USD** (entire invoice again) ❌
+- **Problem:** Uses invoice total instead of container value
 
 #### Correct Behavior:
-- When K1111 reaches P1-S1: Debt = **21,840 USD** (20% of 109,200) ✓
-- When K1111 reaches P2-S1: Debt = **10,920 USD** (10% of 109,200) ✓
-- When K1111 reaches P2-S2: Debt = **10,920 USD** (10% of 109,200) ✓
+- When K1111 **stage P1 completes** (all P1 sub-statuses done): Debt = **21,840 USD** (20% of 109,200) ✓
+- When K1111 **stage P2 completes** (all P2 sub-statuses done): Debt = **21,840 USD** (20% of 109,200) ✓
 - **Total for K1111 after P2:** 43,680 USD (40% of container value)
+- **Note:** Sub-status changes (P1-S1, P1-S2, P2-S1, P2-S2) do NOT trigger debt - only stage completion does
 
 ### Container K3333 (Value: 109,200 USD)
 
 #### Correct Behavior:
-- When K3333 reaches P1-S1: Debt = **21,840 USD** (20% of 109,200) ✓
+- When K3333 **stage P1 completes**: Debt = **21,840 USD** (20% of 109,200) ✓
 - **Total for K3333 after P1:** 21,840 USD (20% of container value)
+- **Note:** K3333 is still in P1, so only P1 debt has been accrued
 
 ---
 
